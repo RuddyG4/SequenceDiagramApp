@@ -1,3 +1,6 @@
+import * as joint from "@joint/core";
+import { sd } from "@/assets/JointJs/joint.shapes.sd"
+
 export function initializeSequenceDiagram(paper, graph) {
 
     const dia = joint.dia;
@@ -5,7 +8,6 @@ export function initializeSequenceDiagram(paper, graph) {
     const linkTools = joint.linkTools;
     const elementTools = joint.elementTools;
     const highlighters = joint.highlighters;
-    const { sd } = shapes;
     const paperDimensions = paper.getComputedSize();
     const paperHeight = paperDimensions.height;
 

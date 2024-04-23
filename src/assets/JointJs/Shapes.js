@@ -1,3 +1,5 @@
+import joint from "@joint/core";
+
 const shapesMap = {
   rectangle: createRectangle,
   circle: createCircle,

@@ -1,10 +1,12 @@
 <script setup>
+import * as joint from "@joint/core";
 import { useRoute } from "vue-router";
 import { ref as vRef, onMounted, watch } from "vue";
 import { getDatabase, ref, onValue, set, push } from "firebase/database";
 import ShapeButton from "./Components/Project/ShapeButton.vue";
 import ProjectControls from "./Components/Project/ProjectControls.vue";
 import { sequenceDiagramShapes } from "@/assets/JointJs/SecuenceDiagramShapes";
+import { sd } from "@/assets/JointJs/joint.shapes.sd"
 import { createNewShape, createNewLink } from "@/assets/JointJs/Shapes";
 import { initializeSequenceDiagram } from "@/assets/JointJs/Sequence";
 
@@ -21,6 +23,8 @@ const projectKey = route.params.projectKey;
 const project = vRef({});
 const namespace = {
   ...joint.shapes,
+  sequenceDiagramShapes,
+  sd
 };
 const graph = vRef(new joint.dia.Graph({}, { cellNamespace: namespace }));
 const paper = vRef(null);
@@ -36,7 +40,6 @@ const saveGraph = () => {
   const graphRef = ref(db, "projects/" + projectKey + "/graph");
   set(graphRef, graph.value.toJSON());
 };
-const { sd } = joint.shapes;
 
 let stopListeningForProjectChanges = listenForProjectChanges();
 
@@ -213,7 +216,9 @@ const handleElementPointerUp = () => {
 };
 
 const handleBlankPointerDown = (evt, x, y) => {
-  joint.highlighters.mask.remove(selectedCell.value.findView(paper.value));
+  if (selectedCell.value) {
+    joint.highlighters.mask.remove(selectedCell.value.findView(paper.value));
+  }
   cellData.value = {};
   selectedCell.value = null;
 };

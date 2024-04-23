@@ -1,3 +1,5 @@
+import * as joint from "@joint/core";
+
 const ActorShape = joint.dia.Element.define(
   "sequenceDiagram.ActorShape",
   {
