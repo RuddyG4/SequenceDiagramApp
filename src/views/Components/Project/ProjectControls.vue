@@ -30,7 +30,7 @@ const props = defineProps({
   activeUsers: {
     type: Object,
     required: true,
-  }
+  },
 });
 
 const isShowModal = ref(false);
@@ -83,24 +83,30 @@ const generatePHPCode = () => {
     );
     filteredMessages.forEach((message) => {
       // testin
-      if (message.source.id === objectLifeline.id) {
-        const targetLifeline = lifelines.find(
-          (lifeline) => lifeline.id === message.target.id
-        );
-        const objectTarget = objects.find(
-          (object) => object.id === targetLifeline.source.id
-        )
-        if (targetLifeline.target.x > objectLifeline.target.x) {
-          code += `  \$${camelize(objectTarget.attrs.label.text)} = new ${objectTarget.attrs.label.text}();\n\n`;
-        }
-      }
+
       // end testing
       if (message.target.id === objectLifeline.id) {
         const sourceLifeline = lifelines.find(
           (lifeline) => lifeline.id === message.source.id
         );
         if (sourceLifeline.target.x < objectLifeline.target.x) {
-          code += `  public function ${message.labels[0].attrs.labelText.text} {\n    // Your code\n  }\n\n`;
+          code += `  public function ${message.labels[0].attrs.labelText.text} {\n    // Your code\n`;
+          filteredMessages.forEach((filteredMessage) => {
+            if (filteredMessage.source.id === objectLifeline.id) {
+              const targetLifeline = lifelines.find(
+                (lifeline) => lifeline.id === filteredMessage.target.id
+              );
+              const objectTarget = objects.find(
+                (object) => object.id === targetLifeline.source.id
+              );
+              if (targetLifeline.target.x > objectLifeline.target.x) {
+                code += `  \$${camelize(objectTarget.attrs.label.text)} = new ${
+                  objectTarget.attrs.label.text
+                }();\n\n`;
+              }
+            }
+          });
+          code += `   }\n\n`;
         }
       }
     });
@@ -110,9 +116,11 @@ const generatePHPCode = () => {
 };
 
 function camelize(str) {
-  return str.replace(/(?:^\w|[A-Z]|\b\w)/g, function(word, index) {
-    return index === 0 ? word.toLowerCase() : word.toUpperCase();
-  }).replace(/\s+/g, '');
+  return str
+    .replace(/(?:^\w|[A-Z]|\b\w)/g, function (word, index) {
+      return index === 0 ? word.toLowerCase() : word.toUpperCase();
+    })
+    .replace(/\s+/g, "");
 }
 
 const generateJavaCode = () => {
@@ -143,9 +151,11 @@ const generateJavaCode = () => {
         );
         const objectTarget = objects.find(
           (object) => object.id === targetLifeline.source.id
-        )
+        );
         if (targetLifeline.target.x > objectLifeline.target.x) {
-          code += `  ${objectTarget.attrs.label.text} ${camelize(objectTarget.attrs.label.text)} = new ${objectTarget.attrs.label.text}();\n\n`;
+          code += `  ${objectTarget.attrs.label.text} ${camelize(
+            objectTarget.attrs.label.text
+          )} = new ${objectTarget.attrs.label.text}();\n\n`;
         }
       }
       if (message.target.id === objectLifeline.id) {
@@ -190,9 +200,11 @@ const generateCCode = () => {
         );
         const objectTarget = objects.find(
           (object) => object.id === targetLifeline.source.id
-        )
+        );
         if (targetLifeline.target.x > objectLifeline.target.x) {
-          code += `  ${objectTarget.attrs.label.text} ${camelize(objectTarget.attrs.label.text)};\n\n`;
+          code += `  ${objectTarget.attrs.label.text} ${camelize(
+            objectTarget.attrs.label.text
+          )};\n\n`;
         }
       }
       if (message.target.id === objectLifeline.id) {
@@ -268,13 +280,13 @@ const generateCode = () => {
           </button>
         </li>
         <li class="flex items-center -space-x-4">
-            <img
-              v-for="(user, key) in activeUsers"
-              :key="key"
-              :alt="user.name"
-              :src="user.photoUrl"
-              class="relative inline-block h-8 w-8 rounded-full border-2 border-white object-cover object-center hover:z-10 focus:z-10 cursor-pointer"
-            />
+          <img
+            v-for="(user, key) in activeUsers"
+            :key="key"
+            :alt="user.name"
+            :src="user.photoUrl"
+            class="relative inline-block h-8 w-8 rounded-full border-2 border-white object-cover object-center hover:z-10 focus:z-10 cursor-pointer"
+          />
         </li>
         <li>
           <FwbDropdown placement="left" close-inside>
@@ -386,7 +398,7 @@ const generateCode = () => {
               <fwb-button @click="generateCode" type="submit">
                 Generate code
               </fwb-button>
-              <fwb-button type="submit">
+              <fwb-button @click="copyToClipboard(generatedCode)" type="submit">
                 <i class="fa-solid fa-copy"></i>
               </fwb-button>
             </div>
@@ -394,16 +406,5 @@ const generateCode = () => {
         </FwbTextarea>
       </div>
     </template>
-    <!-- <template #footer>
-      <div class="flex justify-end">
-        <fwb-button
-          @click="isShowCodeGeneratorModal = false"
-          color="alternative"
-        >
-          Close
-        </fwb-button>
-        <fwb-button @click="closeModal" color="green"> I accept </fwb-button>
-      </div>
-    </template> -->
   </FwbModal>
 </template>
