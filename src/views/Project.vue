@@ -1,18 +1,19 @@
 <script setup>
 import * as joint from "@joint/core";
 import { useRoute } from "vue-router";
-import { ref as vRef, onMounted, watch } from "vue";
+import { ref as vRef, onMounted, watch, computed } from "vue";
 import { getDatabase, ref, onValue, set, push } from "firebase/database";
 import ShapeButton from "./Components/Project/ShapeButton.vue";
 import ProjectControls from "./Components/Project/ProjectControls.vue";
 import { sequenceDiagramShapes } from "@/assets/JointJs/SecuenceDiagramShapes";
-import { sd } from "@/assets/JointJs/joint.shapes.sd"
+import { sd } from "@/assets/JointJs/joint.shapes.sd";
 import { createNewShape, createNewLink } from "@/assets/JointJs/Shapes";
 import { initializeSequenceDiagram } from "@/assets/JointJs/Sequence";
+import { FwbTab, FwbTabs, FwbInput, FwbButton } from "flowbite-vue";
 
 const props = defineProps({
-  userUid: {
-    type: String,
+  user: {
+    type: Object,
     required: true,
   },
 });
@@ -24,7 +25,7 @@ const project = vRef({});
 const namespace = {
   ...joint.shapes,
   sequenceDiagramShapes,
-  sd
+  sd,
 };
 const graph = vRef(new joint.dia.Graph({}, { cellNamespace: namespace }));
 const paper = vRef(null);
@@ -32,6 +33,9 @@ const isChangingGraph = vRef(false);
 const selectedCell = vRef(null);
 const cellData = vRef({});
 const isCreatingRoomCode = vRef(false);
+const activeTab = vRef("first");
+const message = vRef("");
+const messages = vRef([]);
 
 const db = getDatabase();
 const projectRef = ref(db, "projects/" + projectKey);
@@ -56,7 +60,10 @@ function listenForProjectChanges() {
     // graph.value.on("change:position", saveGraph);
   });
 }
-
+const jsonGraph = computed(() => {
+  if (!graph.value) return null;
+  return graph.value.toJSON();
+})
 const initializeJointJsGraph = () => {
   paper.value = new joint.dia.Paper({
     el: graphContainer.value,
@@ -175,6 +182,8 @@ const initializeJointJsGraph = () => {
   paper.value.on("element:pointerdown", handleElementPointerDown);
   paper.value.on("element:pointerclick", handleElementPointerClick);
   paper.value.on("element:pointerup", handleElementPointerUp);
+
+  graph.value.on("remove", handleCellRemovedEvent);
 };
 
 const handleContextMenu = (evt, x, y) => {
@@ -188,14 +197,14 @@ const handleElementPointerDown = (elementView, evt, x, y) => {
 const handleElementPointerClick = (elementView, evt, x, y) => {
   isChangingGraph.value = true;
   if (selectedCell.value) {
-    joint.highlighters.mask.remove(selectedCell.value.findView(paper.value))
+    joint.highlighters.mask.remove(selectedCell.value.findView(paper.value));
   }
   selectedCell.value = elementView.model;
   cellData.value = {
     id: selectedCell.value.id,
     label: selectedCell.value.attr("label/text"),
   };
-  
+
   joint.highlighters.mask.add(
     elementView,
     { selector: "root" },
@@ -221,6 +230,14 @@ const handleBlankPointerDown = (evt, x, y) => {
   }
   cellData.value = {};
   selectedCell.value = null;
+};
+
+const handleCellRemovedEvent = (cell) => {
+  saveGraph();
+  if (selectedCell.value === cell) {
+    selectedCell.value = null;
+    cellData.value = {};
+  }
 };
 
 function addNewShape(shape) {
@@ -286,6 +303,30 @@ const deleteSelectedCell = () => {
     selectedCell.value = null;
     cellData.value = {};
   }
+};
+
+const listenForMessages = () => {
+  const messagesRef = ref(db, "messages/" + projectKey);
+  return onValue(messagesRef, (snapshot) => {
+    if (snapshot.exists()) {
+      const messagesData = snapshot.val();
+      messages.value = messagesData;
+    }
+  });
+};
+
+listenForMessages();
+
+const sendMessage = () => {
+  if (message.value === "") return;
+  const newMessageRef = push(ref(db, "messages/" + projectKey));
+  set(newMessageRef, {
+    message: message.value,
+    userUid: props.user.uid,
+    name: props.user.displayName,
+    createdAt: new Date().getTime(),
+  });
+  message.value = "";
 };
 
 watch(
@@ -402,41 +443,84 @@ watch(
   </div>
 
   <div
-    class="mx-4 p-4 absolute w-1/4 max-w-96 bg-white z-10 top-1/4 -translate-y-1/2 right-4 rounded border border-slate-400"
+    class="mx-4 p-4 absolute w-1/4 h-[500px] max-w-96 min-w-80 bg-white z-10 top-1/4 -translate-y-1/4 right-4 rounded border border-slate-400"
   >
     <div class="flex justify-between">
-      <h3>Shape tools</h3>
+      <h3>Side bar</h3>
       <button type="button">
         <i class="fa-solid fa-xmark"></i>
       </button>
     </div>
-    <div class="rounded bg-slate-100 mt-4">
-      <div v-if="!selectedCell" class="text-slate-400 py-4 text-center">
-        Seleccione un elemento
-      </div>
-      <div v-else class="p-4">
-        <div>
-          <label for="shapeLabel">Label</label>
-          <input
-            v-model="cellData.label"
-            class="w-full border border-slate-400 rounded p-2 mt-2"
-            type="text"
-            name="shapeLabel"
-            id="shapeLabel"
-            autocomplete="off"
-          />
-        </div>
-        <div class="mt-4 flex justify-end">
-          <button
-            @click="deleteSelectedCell"
-            type="button"
-            class="text-red-500 text-sm bg-red-200 px-4 py-2 border border-red-500 rounded"
+    <div class="border rounded-lg mt-4">
+      <FwbTabs v-model="activeTab" class="p-5">
+        <FwbTab name="first" title="Shapes tools">
+          <div
+            v-if="!selectedCell"
+            class="text-slate-400 bg-slate-100 py-4 text-center"
           >
-            <i class="fa-solid fa-trash mr-2 fa-sm"></i>
-            Eliminar
-          </button>
-        </div>
-      </div>
+            Seleccione un elemento
+          </div>
+          <div v-else class="p-4 bg-slate-100">
+            <div>
+              <label for="shapeLabel">Label</label>
+              <input
+                v-model="cellData.label"
+                class="w-full border border-slate-400 rounded p-2 mt-2"
+                type="text"
+                name="shapeLabel"
+                id="shapeLabel"
+                autocomplete="off"
+              />
+            </div>
+            <div class="mt-4 flex justify-end">
+              <button
+                @click="deleteSelectedCell"
+                type="button"
+                class="text-red-500 text-sm bg-red-200 px-4 py-2 border border-red-500 rounded"
+              >
+                <i class="fa-solid fa-trash mr-2 fa-sm"></i>
+                Eliminar
+              </button>
+            </div>
+          </div>
+        </FwbTab>
+        <FwbTab name="second" title="Chat">
+          <div class="flex flex-col gap-4 h-80 justify-between">
+            <div
+              v-if="Object.keys(messages).length === 0"
+              class="text-slate-400 text-center my-auto"
+            >
+              There are no messages yet
+            </div>
+            <div v-else class="flex flex-col gap-2 max-h-72 overflow-y-auto">
+              <div v-for="(message, key) in messages" :key="key">
+                <span class="font-semibold">
+                  {{ message.name || "Anonymous" }}:</span
+                >
+                {{ message.message }}
+              </div>
+            </div>
+            <div>
+              <FwbInput
+                @keyup.enter="sendMessage"
+                v-model="message"
+                type="text"
+                name="message"
+                id="message"
+                autocomplete="off"
+                placeholder="Message..."
+                size="lg"
+              >
+                <template #suffix>
+                  <FwbButton @click="sendMessage">
+                    <i class="fa-solid fa-paper-plane"></i>
+                  </FwbButton>
+                </template>
+              </FwbInput>
+            </div>
+          </div>
+        </FwbTab>
+      </FwbTabs>
     </div>
   </div>
   <!-- content -->

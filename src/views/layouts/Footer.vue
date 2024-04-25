@@ -1,5 +1,5 @@
 <template>
-  <div class="text-blue-gray-600">
+  <div class="text-blue-gray-600 mt-4">
     <footer class="py-2">
       <div
         class="flex w-full flex-wrap items-center justify-center gap-6 px-2 md:justify-between"

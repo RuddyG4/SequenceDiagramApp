@@ -1,4 +1,12 @@
-import joint from "@joint/core";
+import * as joint from "@joint/core";
+import { sequenceDiagramShapes } from "@/assets/JointJs/SecuenceDiagramShapes";
+import { sd } from "@/assets/JointJs/joint.shapes.sd"
+
+joint.shapes = {
+  ...joint.shapes,
+  sequenceDiagram: sequenceDiagramShapes,
+  sd: sd,
+}
 
 const shapesMap = {
   rectangle: createRectangle,

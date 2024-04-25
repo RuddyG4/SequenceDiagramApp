@@ -24,7 +24,7 @@ import { ref, computed } from "vue";
 import { useRouter } from "vue-router";
 
 const props = defineProps({
-  userUid: {
+  user: {
     type: String,
     required: true,
   },
@@ -58,7 +58,7 @@ const getProjects = () => {
     query(
       child(dbRef, "projects"),
       orderByChild("userUid"),
-      equalTo(props.userUid)
+      equalTo(props.user.uid)
     )
   );
   projectsData
@@ -86,7 +86,7 @@ const getSharedProjects = () => {
       const sharedProjectsFilter = Object.entries(projectsData)
         .filter(
           ([projectId, projectData]) =>
-            projectData.guests && projectData.guests[props.userUid] === true
+            projectData.guests && projectData.guests[props.user.uid] === true
         )
         // .map(([projectId, projectData]) => ({ id: projectId, ...projectData }));
       sharedProjects.value = sharedProjectsFilter;
@@ -125,7 +125,7 @@ const createNewProject = () => {
   const newProjectKey = push(child(fRef(db), "projects")).key;
   set(fRef(db, "projects/" + newProjectKey), {
     name: "Project name",
-    userUid: props.userUid,
+    userUid: props.user.uid,
     createdAt: new Date().getTime(),
     lastUpdatedAt: new Date().getTime(),
     roomCode: false,
@@ -162,7 +162,7 @@ const searchProjectbyRoomCode = () => {
 const joinToSharedProject = () => {
   isJoiningToSharedProject.value = true;
   const guestAddedPromise = set(
-    fRef(db, "projects/" + projectSharedKey.value + "/guests/" + props.userUid),
+    fRef(db, "projects/" + projectSharedKey.value + "/guests/" + props.user.uid),
     true
   );
 

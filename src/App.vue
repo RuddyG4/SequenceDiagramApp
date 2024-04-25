@@ -1,12 +1,12 @@
 <template>
   <RouterView
     v-if="isDashboardView"
-    :userUid="userUid"
+    :user="user"
   />
   <div v-else class="min-h-screen bg-gray-50/50">
     <SidebarMenu />
     <div class="p-4 xl:ml-80">
-      <RouterView :userUid="userUid" />
+      <RouterView :user="user" />
       <Footer />
     </div>
   </div>
@@ -20,15 +20,15 @@ import { getAuth, onAuthStateChanged } from "firebase/auth";
 import { ref, computed } from "vue";
 
 const route = useRoute();
-const userUid = ref(null);
+const user = ref({});
 
 const isDashboardView = computed(() => {
   return route.name === "SignIn" || route.name === "register" || route.name === "projects";
 });
 
-onAuthStateChanged(getAuth(), (user) => {
-  if (user) {
-    userUid.value = user.uid;
+onAuthStateChanged(getAuth(), (userData) => {
+  if (userData) {
+    user.value = userData;
     console.log("User is signed in");
   } else {
     // User is signed out

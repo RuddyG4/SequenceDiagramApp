@@ -4,7 +4,6 @@ import { sd } from "@/assets/JointJs/joint.shapes.sd"
 export function initializeSequenceDiagram(paper, graph) {
 
     const dia = joint.dia;
-    const shapes = joint.shapes;
     const linkTools = joint.linkTools;
     const elementTools = joint.elementTools;
     const highlighters = joint.highlighters;
@@ -142,9 +141,9 @@ export function initializeSequenceDiagram(paper, graph) {
         const role = new sd.Role({ position: { x: x - 50, y: y }});
         role.addTo(graph);
         const lifeline = new sd.Lifeline();
-        lifeline.attachToRole(role, role.size().width * 5);
+        lifeline.attachToRole(role, role.size().width * 3.8);
         lifeline.addTo(graph);
-        editText(role.findView(paper), 'attrs/label/text');
+        // editText(role.findView(paper), 'attrs/label/text');
     });
 
     const backend = new sd.RoleGroup();

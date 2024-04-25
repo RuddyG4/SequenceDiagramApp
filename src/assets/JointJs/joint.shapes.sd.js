@@ -41,7 +41,7 @@ const Role = standard.Rectangle.define(
   "sd.Role",
   {
     z: 2,
-    size: { width: 100, height: 80 },
+    size: { width: 150, height: 80 },
     attrs: {
       body: {
         stroke: "#A0A0A0",
