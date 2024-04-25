@@ -1,8 +1,16 @@
 <script setup>
 import { ref } from "vue";
-import { FwbButton, FwbModal, FwbSpinner, FwbInput } from "flowbite-vue";
+import {
+  FwbButton,
+  FwbModal,
+  FwbSpinner,
+  FwbInput,
+  FwbDropdown,
+  FwbListGroup,
+  FwbListGroupItem,
+} from "flowbite-vue";
 
-defineEmits(['saveProject', 'createRoomCode']);
+defineEmits(["saveProject", "createRoomCode"]);
 
 const props = defineProps({
   project: {
@@ -12,7 +20,7 @@ const props = defineProps({
   isCreatingRoomCode: {
     type: Boolean,
     default: false,
-  }
+  },
 });
 
 const isShowModal = ref(false);
@@ -24,6 +32,15 @@ function closeModal() {
 function showModal() {
   isShowModal.value = true;
 }
+
+const copyRoomCode = async () => {
+  try {
+    await navigator.clipboard.writeText(props.project.roomCode);
+    console.log("Contenido copiado al portapapeles");
+  } catch (err) {
+    console.error("Error al copiar: ", err);
+  }
+};
 </script>
 
 <template>
@@ -91,9 +108,18 @@ function showModal() {
           </button>
         </li>
         <li>
-          <button type="button" class="px-2 py-1">
-            <i class="fa-solid fa-ellipsis-vertical"></i>
-          </button>
+          <FwbDropdown placement="left">
+            <template #trigger>
+              <button type="button" class="px-2 py-1">
+                <i class="fa-solid fa-ellipsis-vertical"></i>
+              </button>
+            </template>
+
+            <FwbListGroup>
+              <FwbListGroupItem hover> Generate code </FwbListGroupItem>
+              <FwbListGroupItem hover> Show sidebar </FwbListGroupItem>
+            </FwbListGroup>
+          </FwbDropdown>
         </li>
       </ul>
     </div>
@@ -101,7 +127,7 @@ function showModal() {
 
   <FwbModal v-if="isShowModal" @close="closeModal">
     <template #header>
-      <div class="flex items-center text-lg">Share with your team</div>
+      <div class="flex items-center text-lg font-semibold">Share with your team</div>
     </template>
     <template #body>
       <div v-if="isCreatingRoomCode" class="flex justify-center py-4">
@@ -122,7 +148,7 @@ function showModal() {
           </button>
           para crear un código de invitación.
         </p>
-        <div v-else class="my-4">
+        <div v-else class="mb-4">
           <div class="my-4">
             <FwbInput
               v-model="project.roomCode"
@@ -131,14 +157,22 @@ function showModal() {
               name="room-code"
               id="room-code"
               autocomplete="off"
-              disabled
-            />
+              size="lg"
+              readonly
+            >
+              <template #suffix>
+                <FwbButton @click="copyRoomCode">
+                  <i class="fa-solid fa-copy"></i>
+                </FwbButton>
+              </template>
+            </FwbInput>
           </div>
-          <div class="font-semibold my-2">
-            Your team
-          </div>
+          <div class="font-semibold my-2">Your team</div>
           <div class="border rounded border-slate-400 p-4">
-            <div class="p-4 text-center text-gray-400">Looks like nobody joined yet, share your room code, your teammates will appear here when they join</div>
+            <div class="p-4 text-center text-gray-400">
+              Looks like nobody joined yet, share your room code, your teammates
+              will appear here when they join
+            </div>
             <!-- <div>First person</div> -->
           </div>
         </div>
