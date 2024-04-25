@@ -8,9 +8,11 @@ import {
   FwbDropdown,
   FwbListGroup,
   FwbListGroupItem,
+  FwbRadio,
+  FwbTextarea,
 } from "flowbite-vue";
 
-defineEmits(["saveProject", "createRoomCode"]);
+defineEmits(["saveProject", "createRoomCode", "toggleSideBar"]);
 
 const props = defineProps({
   project: {
@@ -21,9 +23,20 @@ const props = defineProps({
     type: Boolean,
     default: false,
   },
+  jsonGraph: {
+    type: Object,
+    required: true,
+  },
+  activeUsers: {
+    type: Object,
+    required: true,
+  }
 });
 
 const isShowModal = ref(false);
+const isShowCodeGeneratorModal = ref(false);
+const lenguage = ref("php");
+const generatedCode = ref("");
 
 function closeModal() {
   isShowModal.value = false;
@@ -33,12 +46,182 @@ function showModal() {
   isShowModal.value = true;
 }
 
-const copyRoomCode = async () => {
+const copyToClipboard = async (text) => {
   try {
-    await navigator.clipboard.writeText(props.project.roomCode);
+    await navigator.clipboard.writeText(text);
     console.log("Contenido copiado al portapapeles");
   } catch (err) {
     console.error("Error al copiar: ", err);
+  }
+};
+
+const getSymbolsPerTypeFromJson = (type) => {
+  const cells = props.jsonGraph.cells;
+  return cells.filter((cell) => cell.type === type);
+};
+
+const generatePHPCode = () => {
+  let code = `<?php\n\n`;
+  const objects = getSymbolsPerTypeFromJson("sd.Role"); // objects
+  const lifelines = getSymbolsPerTypeFromJson("sd.Lifeline");
+  const messages = getSymbolsPerTypeFromJson("sd.Message");
+  const filteredLifelines = lifelines.filter((lifeline) => {
+    return objects.some((object) => {
+      return object.embeds.some((embed) => embed === lifeline.id);
+    });
+  });
+  const filteredMessages = messages.filter((message) => {
+    return filteredLifelines.some(
+      (lifeline) =>
+        lifeline.id === message.source.id || lifeline.id === message.target.id
+    );
+  });
+  objects.forEach((object) => {
+    code += `class ${object.attrs.label.text} {\n`;
+    const objectLifeline = filteredLifelines.find(
+      (lifeline) => lifeline.id === object.embeds[0]
+    );
+    filteredMessages.forEach((message) => {
+      // testin
+      if (message.source.id === objectLifeline.id) {
+        const targetLifeline = lifelines.find(
+          (lifeline) => lifeline.id === message.target.id
+        );
+        const objectTarget = objects.find(
+          (object) => object.id === targetLifeline.source.id
+        )
+        if (targetLifeline.target.x > objectLifeline.target.x) {
+          code += `  \$${camelize(objectTarget.attrs.label.text)} = new ${objectTarget.attrs.label.text}();\n\n`;
+        }
+      }
+      // end testing
+      if (message.target.id === objectLifeline.id) {
+        const sourceLifeline = lifelines.find(
+          (lifeline) => lifeline.id === message.source.id
+        );
+        if (sourceLifeline.target.x < objectLifeline.target.x) {
+          code += `  public function ${message.labels[0].attrs.labelText.text} {\n    // Your code\n  }\n\n`;
+        }
+      }
+    });
+    code += `}\n\n`;
+  });
+  return code;
+};
+
+function camelize(str) {
+  return str.replace(/(?:^\w|[A-Z]|\b\w)/g, function(word, index) {
+    return index === 0 ? word.toLowerCase() : word.toUpperCase();
+  }).replace(/\s+/g, '');
+}
+
+const generateJavaCode = () => {
+  let code = ``;
+  const objects = getSymbolsPerTypeFromJson("sd.Role"); // objects
+  const lifelines = getSymbolsPerTypeFromJson("sd.Lifeline");
+  const messages = getSymbolsPerTypeFromJson("sd.Message");
+  const filteredLifelines = lifelines.filter((lifeline) => {
+    return objects.some((object) => {
+      return object.embeds.some((embed) => embed === lifeline.id);
+    });
+  });
+  const filteredMessages = messages.filter((message) => {
+    return filteredLifelines.some(
+      (lifeline) =>
+        lifeline.id === message.source.id || lifeline.id === message.target.id
+    );
+  });
+  objects.forEach((object) => {
+    code += `public class ${object.attrs.label.text} {\n`;
+    const objectLifeline = filteredLifelines.find(
+      (lifeline) => lifeline.id === object.embeds[0]
+    );
+    filteredMessages.forEach((message) => {
+      if (message.source.id === objectLifeline.id) {
+        const targetLifeline = lifelines.find(
+          (lifeline) => lifeline.id === message.target.id
+        );
+        const objectTarget = objects.find(
+          (object) => object.id === targetLifeline.source.id
+        )
+        if (targetLifeline.target.x > objectLifeline.target.x) {
+          code += `  ${objectTarget.attrs.label.text} ${camelize(objectTarget.attrs.label.text)} = new ${objectTarget.attrs.label.text}();\n\n`;
+        }
+      }
+      if (message.target.id === objectLifeline.id) {
+        const sourceLifeline = lifelines.find(
+          (lifeline) => lifeline.id === message.source.id
+        );
+        if (sourceLifeline.target.x < objectLifeline.target.x) {
+          code += `  public void ${message.labels[0].attrs.labelText.text} {\n    // Your code\n  }\n\n`;
+        }
+      }
+    });
+    code += `}\n\n`;
+  });
+  return code;
+};
+
+const generateCCode = () => {
+  let code = ``;
+  const objects = getSymbolsPerTypeFromJson("sd.Role"); // objects
+  const lifelines = getSymbolsPerTypeFromJson("sd.Lifeline");
+  const messages = getSymbolsPerTypeFromJson("sd.Message");
+  const filteredLifelines = lifelines.filter((lifeline) => {
+    return objects.some((object) => {
+      return object.embeds.some((embed) => embed === lifeline.id);
+    });
+  });
+  const filteredMessages = messages.filter((message) => {
+    return filteredLifelines.some(
+      (lifeline) =>
+        lifeline.id === message.source.id || lifeline.id === message.target.id
+    );
+  });
+  objects.forEach((object) => {
+    code += `class ${object.attrs.label.text} {\npublic:\n`;
+    const objectLifeline = filteredLifelines.find(
+      (lifeline) => lifeline.id === object.embeds[0]
+    );
+    filteredMessages.forEach((message) => {
+      if (message.source.id === objectLifeline.id) {
+        const targetLifeline = lifelines.find(
+          (lifeline) => lifeline.id === message.target.id
+        );
+        const objectTarget = objects.find(
+          (object) => object.id === targetLifeline.source.id
+        )
+        if (targetLifeline.target.x > objectLifeline.target.x) {
+          code += `  ${objectTarget.attrs.label.text} ${camelize(objectTarget.attrs.label.text)};\n\n`;
+        }
+      }
+      if (message.target.id === objectLifeline.id) {
+        const sourceLifeline = lifelines.find(
+          (lifeline) => lifeline.id === message.source.id
+        );
+        if (sourceLifeline.target.x < objectLifeline.target.x) {
+          code += `  void ${message.labels[0].attrs.labelText.text} {\n    // Your code\n  }\n\n`;
+        }
+      }
+    });
+    code += `};\n\n`;
+  });
+  return code;
+};
+
+const generateCode = () => {
+  switch (lenguage.value) {
+    case "php":
+      generatedCode.value = generatePHPCode();
+      break;
+    case "Java":
+      generatedCode.value = generateJavaCode();
+      break;
+    case "C++":
+      generatedCode.value = generateCCode();
+      break;
+    default:
+      break;
   }
 };
 </script>
@@ -85,30 +268,16 @@ const copyRoomCode = async () => {
           </button>
         </li>
         <li class="flex items-center -space-x-4">
-          <button type="button">
             <img
-              alt="user 1"
-              src="https://raw.githubusercontent.com/creativetimofficial/public-assets/master/soft-ui-dashboard/assets/img/drake.jpg"
-              class="relative inline-block h-8 w-8 rounded-full border-2 border-white object-cover object-center hover:z-10 focus:z-10"
+              v-for="(user, key) in activeUsers"
+              :key="key"
+              :alt="user.name"
+              :src="user.photoUrl"
+              class="relative inline-block h-8 w-8 rounded-full border-2 border-white object-cover object-center hover:z-10 focus:z-10 cursor-pointer"
             />
-          </button>
-          <button type="button">
-            <img
-              alt="user 2"
-              src="https://images.unsplash.com/photo-1580489944761-15a19d654956?ixlib=rb-1.2.1&amp;ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&amp;auto=format&amp;fit=crop&amp;w=1061&amp;q=80"
-              class="relative inline-block h-8 w-8 rounded-full border-2 border-white object-cover object-center hover:z-10 focus:z-10"
-            />
-          </button>
-          <button type="button">
-            <img
-              alt="user 3"
-              src="https://raw.githubusercontent.com/creativetimofficial/public-assets/master/soft-ui-dashboard/assets/img/drake.jpg"
-              class="relative inline-block h-8 w-8 rounded-full border-2 border-white object-cover object-center hover:z-10 focus:z-10"
-            />
-          </button>
         </li>
         <li>
-          <FwbDropdown placement="left">
+          <FwbDropdown placement="left" close-inside>
             <template #trigger>
               <button type="button" class="px-2 py-1">
                 <i class="fa-solid fa-ellipsis-vertical"></i>
@@ -116,8 +285,12 @@ const copyRoomCode = async () => {
             </template>
 
             <FwbListGroup>
-              <FwbListGroupItem hover> Generate code </FwbListGroupItem>
-              <FwbListGroupItem hover> Show sidebar </FwbListGroupItem>
+              <FwbListGroupItem @click="isShowCodeGeneratorModal = true" hover>
+                Generate code
+              </FwbListGroupItem>
+              <FwbListGroupItem @click="$emit('toggleSideBar')" hover>
+                Show sidebar
+              </FwbListGroupItem>
             </FwbListGroup>
           </FwbDropdown>
         </li>
@@ -127,7 +300,9 @@ const copyRoomCode = async () => {
 
   <FwbModal v-if="isShowModal" @close="closeModal">
     <template #header>
-      <div class="flex items-center text-lg font-semibold">Share with your team</div>
+      <div class="flex items-center text-lg font-semibold">
+        Share with your team
+      </div>
     </template>
     <template #body>
       <div v-if="isCreatingRoomCode" class="flex justify-center py-4">
@@ -161,7 +336,7 @@ const copyRoomCode = async () => {
               readonly
             >
               <template #suffix>
-                <FwbButton @click="copyRoomCode">
+                <FwbButton @click="copyToClipboard(project.roomCode)">
                   <i class="fa-solid fa-copy"></i>
                 </FwbButton>
               </template>
@@ -184,5 +359,51 @@ const copyRoomCode = async () => {
         <!-- <fwb-button @click="closeModal" color="green"> I accept </fwb-button> -->
       </div>
     </template>
+  </FwbModal>
+
+  <FwbModal
+    v-if="isShowCodeGeneratorModal"
+    @close="isShowCodeGeneratorModal = false"
+  >
+    <template #header>
+      <div class="flex items-center text-lg font-semibold">Generate code</div>
+    </template>
+    <template #body>
+      <div>
+        <div class="flex">
+          <FwbRadio v-model="lenguage" label="PHP" value="php" />
+          <FwbRadio v-model="lenguage" label="Java" value="Java" />
+          <FwbRadio v-model="lenguage" label="C++" value="C++" />
+        </div>
+        <FwbTextarea
+          v-model="generatedCode"
+          placeholder="Your code will appear here"
+          label=""
+          rows="14"
+        >
+          <template #footer>
+            <div class="flex items-center justify-end gap-2">
+              <fwb-button @click="generateCode" type="submit">
+                Generate code
+              </fwb-button>
+              <fwb-button type="submit">
+                <i class="fa-solid fa-copy"></i>
+              </fwb-button>
+            </div>
+          </template>
+        </FwbTextarea>
+      </div>
+    </template>
+    <!-- <template #footer>
+      <div class="flex justify-end">
+        <fwb-button
+          @click="isShowCodeGeneratorModal = false"
+          color="alternative"
+        >
+          Close
+        </fwb-button>
+        <fwb-button @click="closeModal" color="green"> I accept </fwb-button>
+      </div>
+    </template> -->
   </FwbModal>
 </template>

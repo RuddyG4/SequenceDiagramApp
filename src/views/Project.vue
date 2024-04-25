@@ -1,7 +1,7 @@
 <script setup>
 import * as joint from "@joint/core";
 import { useRoute } from "vue-router";
-import { ref as vRef, onMounted, watch, computed } from "vue";
+import { ref as vRef, onMounted, watch, computed, onBeforeUnmount } from "vue";
 import { getDatabase, ref, onValue, set, push } from "firebase/database";
 import ShapeButton from "./Components/Project/ShapeButton.vue";
 import ProjectControls from "./Components/Project/ProjectControls.vue";
@@ -10,6 +10,10 @@ import { sd } from "@/assets/JointJs/joint.shapes.sd";
 import { createNewShape, createNewLink } from "@/assets/JointJs/Shapes";
 import { initializeSequenceDiagram } from "@/assets/JointJs/Sequence";
 import { FwbTab, FwbTabs, FwbInput, FwbButton } from "flowbite-vue";
+
+onBeforeUnmount(() => {
+  changeUserActiveStatus(null);
+});
 
 const props = defineProps({
   user: {
@@ -36,6 +40,8 @@ const isCreatingRoomCode = vRef(false);
 const activeTab = vRef("first");
 const message = vRef("");
 const messages = vRef([]);
+const isSideBarOpen = vRef(true);
+const activeUsers = vRef({});
 
 const db = getDatabase();
 const projectRef = ref(db, "projects/" + projectKey);
@@ -47,8 +53,36 @@ const saveGraph = () => {
 
 let stopListeningForProjectChanges = listenForProjectChanges();
 
+const changeUserActiveStatus = (value) => {
+  const activeUsersRef = ref(
+    db,
+    "activeUsers/" + projectKey + "/" + props.user.uid
+  );
+  set(activeUsersRef, value)
+    .then(() => {
+      console.log("User active status changed");
+    })
+    .catch((error) => {
+      console.error("Error changing user active status: ", error);
+    });
+};
+
+const getActiveUsers = () => {
+  const activeUsersRef = ref(db, "activeUsers/" + projectKey);
+  onValue(activeUsersRef, (snapshot) => {
+    if (snapshot.exists()) {
+      activeUsers.value = snapshot.val();
+    }
+  })
+}
+
 onMounted(() => {
   initializeJointJsGraph();
+  changeUserActiveStatus({
+    name: props.user.displayName,
+    photoUrl: props.user.photoURL,
+  });
+  getActiveUsers();
 });
 
 function listenForProjectChanges() {
@@ -63,7 +97,7 @@ function listenForProjectChanges() {
 const jsonGraph = computed(() => {
   if (!graph.value) return null;
   return graph.value.toJSON();
-})
+});
 const initializeJointJsGraph = () => {
   paper.value = new joint.dia.Paper({
     el: graphContainer.value,
@@ -233,7 +267,7 @@ const handleBlankPointerDown = (evt, x, y) => {
 };
 
 const handleCellRemovedEvent = (cell) => {
-  saveGraph();
+  // saveGraph();
   if (selectedCell.value === cell) {
     selectedCell.value = null;
     cellData.value = {};
@@ -337,14 +371,21 @@ watch(
     }
   }
 );
+
+const toggleSideBar = (value = true) => {
+  isSideBarOpen.value = value;
+};
 </script>
 
 <template>
   <ProjectControls
     @saveProject="saveProject"
     @createRoomCode="createRoomCode"
+    @toggleSideBar="toggleSideBar"
     :isCreatingRoomCode="isCreatingRoomCode"
     :project="project"
+    :jsonGraph="jsonGraph"
+    :activeUsers="activeUsers"
   />
 
   <div
@@ -443,11 +484,12 @@ watch(
   </div>
 
   <div
-    class="mx-4 p-4 absolute w-1/4 h-[500px] max-w-96 min-w-80 bg-white z-10 top-1/4 -translate-y-1/4 right-4 rounded border border-slate-400"
+    v-if="isSideBarOpen"
+    class="mx-4 p-4 absolute w-1/4 h-[500px] max-w-96 min-w-80 bg-white z-10 top-1/4 -translate-y-[20%] 2xl:-translate-y-1/4 right-4 rounded border border-slate-400"
   >
     <div class="flex justify-between">
       <h3>Side bar</h3>
-      <button type="button">
+      <button @click="toggleSideBar(false)" type="button">
         <i class="fa-solid fa-xmark"></i>
       </button>
     </div>

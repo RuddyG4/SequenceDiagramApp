@@ -16,19 +16,21 @@ import {
   query,
   equalTo,
   orderByChild,
-  orderByKey,
-  orderByValue,
   limitToFirst,
 } from "firebase/database";
-import { ref, computed } from "vue";
+import { ref, computed, onMounted } from "vue";
 import { useRouter } from "vue-router";
 
 const props = defineProps({
   user: {
-    type: String,
+    type: Object,
     required: true,
   },
 });
+
+// onMounted(() => {
+//   window.addEventListener('beforeunload', alert("beforeunload"));
+// })
 
 const router = useRouter();
 const projects = ref({});

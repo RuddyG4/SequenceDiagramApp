@@ -141,7 +141,7 @@ export function initializeSequenceDiagram(paper, graph) {
         const role = new sd.Role({ position: { x: x - 50, y: y }});
         role.addTo(graph);
         const lifeline = new sd.Lifeline();
-        lifeline.attachToRole(role, role.size().width * 3.8);
+        lifeline.attachToRole(role, role.size().width * 3.5);
         lifeline.addTo(graph);
         // editText(role.findView(paper), 'attrs/label/text');
     });
