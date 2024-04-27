@@ -205,7 +205,7 @@ const joinToSharedProject = () => {
     </div>
     <div
       v-else
-      class="mt-4 p-4 rounded bg-slate-300 grid grid-cols-6 gap-4 shadow-md"
+      class="mt-4 p-4 rounded bg-slate-300 grid grid-cols-4 lg:grid-cols-5 gap-4 shadow-md"
     >
       <div
         v-if="projectCount === 0"
@@ -264,7 +264,7 @@ const joinToSharedProject = () => {
 
     <div
       v-else
-      class="mt-4 p-4 rounded bg-slate-300 grid grid-cols-6 gap-4 shadow-md"
+      class="mt-4 p-4 rounded bg-slate-300 grid grid-cols-4 lg:grid-cols-5 gap-4 shadow-md"
     >
       <div
         v-if="sharedProjectCount === 0"

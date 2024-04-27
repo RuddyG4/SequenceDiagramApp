@@ -2,6 +2,8 @@ import { createRouter, createWebHistory } from "vue-router";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 
 const router = createRouter({
+  linkActiveClass: 'bg-gradient-to-tr from-blue-600 to-blue-400 shadow-md shadow-blue-500/20 hover:shadow-lg hover:shadow-blue-500/40 active:opacity-[0.85]',
+  linkExactActiveClass: 'bg-gradient-to-tr from-blue-600 to-blue-400 shadow-md shadow-blue-500/20 hover:shadow-lg hover:shadow-blue-500/40 active:opacity-[0.85]',
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
     {
@@ -38,7 +40,7 @@ const router = createRouter({
     {
       path: "/your-projects",
       name: "your-projects",
-      component: () => import("../views/RecentProjects.vue"),
+      component: () => import("../views/Projects.vue"),
       meta: {
         requiresAuth: true
       }
