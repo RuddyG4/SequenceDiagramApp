@@ -10,6 +10,7 @@ import {
   FwbListGroupItem,
   FwbRadio,
   FwbTextarea,
+  FwbTooltip,
 } from "flowbite-vue";
 
 defineEmits(["saveProject", "createRoomCode", "toggleSideBar"]);
@@ -279,14 +280,23 @@ const generateCode = () => {
             <span class="relative ml-2">Compartir</span>
           </button>
         </li>
-        <li class="flex items-center -space-x-4">
-          <img
-            v-for="(user, key) in activeUsers"
-            :key="key"
-            :alt="user.name"
-            :src="user.photoUrl"
-            class="relative inline-block h-8 w-8 rounded-full border-2 border-white object-cover object-center hover:z-10 focus:z-10 cursor-pointer"
-          />
+        <li
+          v-for="(user, key) in activeUsers"
+          :key="key"
+          class="flex items-center -space-x-4"
+        >
+          <FwbTooltip>
+            <template #trigger>
+              <img
+                :alt="user.name"
+                :src="user.photoUrl"
+                class="relative inline-block h-8 w-8 rounded-full border-2 border-white object-cover object-center hover:z-10 focus:z-10 cursor-pointer"
+              />
+            </template>
+            <template #content>
+              <div class="bg-slate-200 py-1 px-2 rounded">{{ user.name }}</div>
+            </template>
+          </FwbTooltip>
         </li>
         <li>
           <FwbDropdown placement="left" close-inside>

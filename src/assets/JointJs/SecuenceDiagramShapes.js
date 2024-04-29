@@ -150,7 +150,7 @@ const AlternativeBox = joint.dia.Element.define(
         fill: 'transparent',
         stroke: 'black',
       },
-      text: {
+      label: {
         text: 'Alt',
         fill: 'black',
         x: 8,
@@ -187,7 +187,7 @@ const AlternativeBox = joint.dia.Element.define(
       },
       {
         tagName: 'text',
-        selector: 'text'
+        selector: 'label'
       },
       {
         tagName: 'line',

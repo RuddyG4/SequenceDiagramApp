@@ -1,4 +1,11 @@
-<script setup></script>
+<script setup>
+const props = defineProps({
+  user: {
+    type: Object,
+    required: true,
+  },
+});
+</script>
 
 <template>
   <h1 class="font-bold text-2xl">Diagram App</h1>

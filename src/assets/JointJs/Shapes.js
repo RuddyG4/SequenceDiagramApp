@@ -1,12 +1,11 @@
 import * as joint from "@joint/core";
-import { sequenceDiagramShapes } from "@/assets/JointJs/SecuenceDiagramShapes";
-import { sd } from "@/assets/JointJs/joint.shapes.sd"
+import { sd, sequenceDiagramShapes } from "@/assets/JointJs/joint.shapes.sd";
 
 joint.shapes = {
   ...joint.shapes,
   sequenceDiagram: sequenceDiagramShapes,
   sd: sd,
-}
+};
 
 const shapesMap = {
   rectangle: createRectangle,
@@ -21,16 +20,25 @@ const linksMap = {
   link: createLink,
 };
 
-export function createNewShape(shapeToCreate, paperDimensions) {
+export function createNewShape(shapeToCreate, paper) {
   let shape = shapesMap[shapeToCreate]();
+  const paperDimensions = paper.getComputedSize();
   shape.position(
     paperDimensions.width / 2 - shape.size().width / 2,
     paperDimensions.height / 2 - shape.size().height / 2
   );
+  const graph = paper.options.model;
+  if (shapeToCreate === "actor") {
+    const lifeline = new sd.Lifeline();
+    lifeline.attachToActor(shape, shape.size().height * 5.2);
+    lifeline.addTo(graph);
+  }
+  shape.addTo(graph);
   return shape;
 }
 
-export function createNewLink(linkToCreate, paperDimensions) {
+export function createNewLink(linkToCreate, paper) {
+  const paperDimensions = paper.getComputedSize();
   return linksMap[linkToCreate](paperDimensions);
 }
 
@@ -41,10 +49,6 @@ function createRectangle() {
     body: {
       fill: "transparent",
     },
-    // label: {
-    //   text: "Hello",
-    //   fill: "black",
-    // },
   });
   return rect;
 }

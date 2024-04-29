@@ -1,11 +1,5 @@
 <script setup>
-import {
-  FwbCard,
-  FwbButton,
-  FwbSpinner,
-  FwbModal,
-  FwbInput,
-} from "flowbite-vue";
+import { FwbButton, FwbModal, FwbInput } from "flowbite-vue";
 import {
   getDatabase,
   child,
@@ -18,8 +12,9 @@ import {
   orderByChild,
   limitToFirst,
 } from "firebase/database";
-import { ref, computed, onMounted } from "vue";
+import { ref } from "vue";
 import { useRouter } from "vue-router";
+import ShowProjects from "@/views/Components/Project/ShowProjects.vue";
 
 const props = defineProps({
   user: {
@@ -28,14 +23,10 @@ const props = defineProps({
   },
 });
 
-// onMounted(() => {
-//   window.addEventListener('beforeunload', alert("beforeunload"));
-// })
-
 const router = useRouter();
 const projects = ref({});
 const sharedProjects = ref({});
-const loadingData = ref(false);
+const isLoadingProjects = ref(false);
 const isLoadingSharedProjects = ref(false);
 const db = getDatabase();
 const dbRef = fRef(db);
@@ -55,7 +46,7 @@ function showModal() {
 }
 
 const getProjects = () => {
-  loadingData.value = true;
+  isLoadingProjects.value = true;
   const projectsData = get(
     query(
       child(dbRef, "projects"),
@@ -67,15 +58,13 @@ const getProjects = () => {
     .then((snapshot) => {
       if (snapshot.exists()) {
         projects.value = snapshot.val();
-      } else {
-        console.log("No data available");
       }
     })
     .catch((error) => {
       console.error(error);
     })
     .finally(() => {
-      loadingData.value = false;
+      isLoadingProjects.value = false;
     });
 };
 
@@ -85,13 +74,12 @@ const getSharedProjects = () => {
   sharedProjectsData
     .then((snapshot) => {
       const projectsData = snapshot.val() || {};
-      const sharedProjectsFilter = Object.entries(projectsData)
-        .filter(
-          ([projectId, projectData]) =>
-            projectData.guests && projectData.guests[props.user.uid] === true
-        )
-        // .map(([projectId, projectData]) => ({ id: projectId, ...projectData }));
-      sharedProjects.value = sharedProjectsFilter;
+      const sharedProjectsFilter = Object.entries(projectsData).filter(
+        ([projectId, projectData]) =>
+          projectData.guests && projectData.guests[props.user.uid] === true
+      );
+      // .map(([projectId, projectData]) => ({ id: projectId, ...projectData }));
+      sharedProjects.value = Object.fromEntries(sharedProjectsFilter);
     })
     .catch((error) => {
       console.error(error);
@@ -104,26 +92,8 @@ const getSharedProjects = () => {
 getProjects();
 getSharedProjects();
 
-const projectCount = computed(() => {
-  if (isObjectEmpty(projects.value)) {
-    return 0;
-  }
-  return Object.keys(projects.value).length;
-});
-
-const sharedProjectCount = computed(() => {
-  return sharedProjects.value.length;
-});
-
-const isObjectEmpty = (objectName) => {
-  return (
-    objectName &&
-    Object.keys(objectName).length === 0 &&
-    objectName.constructor === Object
-  );
-};
-
 const createNewProject = () => {
+  if (!confirm("¿Quieres crear un nuevo proyecto?")) return;
   const newProjectKey = push(child(fRef(db), "projects")).key;
   set(fRef(db, "projects/" + newProjectKey), {
     name: "Project name",
@@ -164,7 +134,10 @@ const searchProjectbyRoomCode = () => {
 const joinToSharedProject = () => {
   isJoiningToSharedProject.value = true;
   const guestAddedPromise = set(
-    fRef(db, "projects/" + projectSharedKey.value + "/guests/" + props.user.uid),
+    fRef(
+      db,
+      "projects/" + projectSharedKey.value + "/guests/" + props.user.uid
+    ),
     true
   );
 
@@ -175,6 +148,8 @@ const joinToSharedProject = () => {
       projectShared.value = null;
       roomCode.value = "";
       closeModal();
+      getSharedProjects();
+      //TODO: show success message with toast
     })
     .catch((error) => {
       console.log(error);
@@ -186,125 +161,29 @@ const joinToSharedProject = () => {
 </script>
 
 <template>
-  <div class="flex justify-between bg-white p-4 rounded shadow-md">
+  <div class="bg-white p-4 rounded shadow-md">
     <h1 class="text-2xl font-semibold">Projects</h1>
-    <div>
-      <fwb-button @click="createNewProject" color="default">
-        Crear nuevo proyecto
-      </fwb-button>
-    </div>
   </div>
 
-  <div class="bg-white mt-6 p-4 rounded shadow-md">
-    <h2 class="text-xl font-semibold">Your projects</h2>
-    <div
-      v-if="loadingData"
-      class="mt-4 p-4 py-8 rounded bg-slate-300 flex justify-center shadow-md"
-    >
-      <FwbSpinner size="12" />
-    </div>
-    <div
-      v-else
-      class="mt-4 p-4 rounded bg-slate-300 grid grid-cols-4 lg:grid-cols-5 2xl:grid-cols-7 gap-4 shadow-md"
-    >
-      <div
-        v-if="projectCount === 0"
-        class="col-span-6 p-4 text-center border rounded-lg border-slate-400 hover:border-slate-500"
-      >
-        <div class="mb-2 text-gray-600">
-          Todavía no tienes proyectos, crea uno nuevo
-        </div>
-        <div>
-          <fwb-button @click="createNewProject" color="default">
-            Crear proyecto
-          </fwb-button>
-        </div>
-      </div>
-      <template v-else>
-        <RouterLink
-          v-for="(project, projectKey) in projects"
-          :to="{ name: 'projects', params: { projectKey: projectKey } }"
-          class="border rounded-lg border-slate-400 hover:border-slate-500"
-        >
-          <fwb-card
-            img-alt="Desk"
-            img-src="/assets/images/logo.png"
-            variant="image"
-          >
-            <div class="p-2">
-              <h5
-                class="mb-2 text-lg font-semibold tracking-tight text-gray-900 dark:text-white"
-              >
-                {{ project.name }}
-              </h5>
-              <p class="font-normal text-sm text-gray-500 dark:text-gray-400">
-                Editado hace 4 días
-              </p>
-            </div>
-          </fwb-card>
-        </RouterLink>
-      </template>
-    </div>
-  </div>
+  <ShowProjects
+    :projects="projects"
+    :isLoading="isLoadingProjects"
+    title="Your projects"
+  >
+    <template v-slot:headerButton>
+      <FwbButton @click="createNewProject"> Create new project </FwbButton>
+    </template>
+  </ShowProjects>
 
-  <div class="bg-white mt-6 p-4 rounded shadow-md">
-    <div class="flex justify-between">
-      <h2 class="text-xl font-semibold">Projects shared with you</h2>
-      <fwb-button @click="showModal" color="default">
-        Unirse a un proyecto
-      </fwb-button>
-    </div>
-
-    <div
-      v-if="isLoadingSharedProjects"
-      class="mt-4 p-4 py-8 rounded bg-slate-300 flex justify-center shadow-md"
-    >
-      <FwbSpinner size="12" />
-    </div>
-
-    <div
-      v-else
-      class="mt-4 p-4 rounded bg-slate-300 grid grid-cols-4 lg:grid-cols-5 2xl:grid-cols-7 gap-4 shadow-md"
-    >
-      <div
-        v-if="sharedProjectCount === 0"
-        class="col-span-6 p-4 text-center border rounded-lg border-slate-400 hover:border-slate-500"
-      >
-        <div class="mb-2 text-gray-600">
-          Todavía no te has unido a ningun proyecto
-        </div>
-        <div>
-          <fwb-button @click="showModal" color="default">
-            Unirse a un proyecto
-          </fwb-button>
-        </div>
-      </div>
-      <template v-else>
-        <RouterLink
-          v-for="(project) in sharedProjects"
-          :to="{ name: 'projects', params: { projectKey: project[0] } }"
-          class="border rounded-lg border-slate-400 hover:border-slate-500"
-        >
-          <fwb-card
-            img-alt="Desk"
-            img-src="/assets/images/logo.png"
-            variant="image"
-          >
-            <div class="p-2">
-              <h5
-                class="mb-2 text-lg font-semibold tracking-tight text-gray-900 dark:text-white"
-              >
-                {{ project[1].name }}
-              </h5>
-              <p class="font-normal text-sm text-gray-500 dark:text-gray-400">
-                Editado hace 4 días
-              </p>
-            </div>
-          </fwb-card>
-        </RouterLink>
-      </template>
-    </div>
-  </div>
+  <ShowProjects
+    :projects="sharedProjects"
+    :isLoading="isLoadingSharedProjects"
+    title="Shared projects"
+  >
+    <template v-slot:headerButton>
+      <FwbButton @click="showModal"> Join with room code </FwbButton>
+    </template>
+  </ShowProjects>
 
   <FwbModal v-if="isShowModal" @close="closeModal">
     <template #header>

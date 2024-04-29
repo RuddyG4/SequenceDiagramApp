@@ -3,16 +3,20 @@
 
   <div class="mt-8">
     <div class="flex-1 flex flex-col gap-6">
-        <div>
-          <FwbInput placeholder="Email" label="Email" v-model="email" disabled />
-        </div>
+      <div>
+        <FwbInput placeholder="Email" label="Email" v-model="email" disabled />
+      </div>
 
       <div>
         <FwbInput placeholder="Username" label="Username" v-model="username" />
       </div>
-      
+
       <div>
-        <FwbInput placeholder="Photo url" label="Photo url" v-model="photoUrl" />
+        <FwbInput
+          placeholder="Photo url"
+          label="Photo url"
+          v-model="photoUrl"
+        />
       </div>
 
       <div>
@@ -44,35 +48,38 @@ import { FwbInput, FwbFileInput, FwbButton } from "flowbite-vue";
 import { getAuth, updateProfile, onAuthStateChanged } from "firebase/auth";
 import { ref } from "vue";
 
-const auth = getAuth();
-const user = ref(null);
-const username = ref("");
-const phoneNumber = ref("");
-const email = ref("");
-const photoUrl = ref("");
-const file = ref(null);
-
-onAuthStateChanged(auth, (user) => {
-  if (user) {
-    user.value = user;
-    username.value = user.displayName;
-    phoneNumber.value = user.phoneNumber;
-    email.value = user.email;
-    photoUrl.value = user.photoURL;
-    console.log(user.value);
-  } else {
-    // User is signed out
-    // ...
-  }
+const props = defineProps({
+  user: {
+    type: Object,
+    required: true,
+  },
 });
 
+const auth = getAuth();
+const user = ref(null);
+const username = ref(props.user.displayName);
+const phoneNumber = ref(props.user.phoneNumber);
+const email = ref(props.user.email);
+const photoUrl = ref(props.user.photoURL);
+const file = ref(null);
+const isUpdatingProfile = ref(false);
+
 const updateUserProfile = () => {
+  isUpdatingProfile.value = true;
   updateProfile(auth.currentUser, {
     displayName: username.value,
     phoneNumber: phoneNumber.value,
     photoURL: photoUrl.value,
-  }).then(() => {
-    console.log("Profile updated successfully");
-  });
+  })
+    .then(() => {
+      console.log("Profile updated successfully");
+      // TODO: show success message with toast
+    })
+    .catch((error) => {
+      console.error("Error updating profile: ", error);
+    })
+    .finally(() => {
+      isUpdatingProfile.value = false;
+    });
 };
 </script>

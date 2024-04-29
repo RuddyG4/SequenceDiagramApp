@@ -37,7 +37,6 @@ const toggleSidebar = () => {
 onAuthStateChanged(getAuth(), (userData) => {
   if (userData) {
     user.value = userData;
-    console.log("User is signed in");
   } else {
     // User is signed out
     console.log("User is signed out");
