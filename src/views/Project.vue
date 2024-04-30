@@ -41,6 +41,7 @@ const message = vRef("");
 const messages = vRef([]);
 const isSideBarOpen = vRef(true);
 const activeUsers = vRef({});
+const messagesContainer = vRef(null);
 
 const db = getDatabase();
 const projectRef = ref(db, "projects/" + projectKey);
@@ -231,6 +232,8 @@ const handleElementPointerDown = (elementView, evt, x, y) => {
 };
 
 const handleElementPointerClick = (elementView, evt, x, y) => {
+  isSideBarOpen.value = true;
+  activeTab.value = "first";
   isChangingGraph.value = true;
   if (selectedCell.value) {
     joint.highlighters.mask.remove(selectedCell.value.findView(paper.value));
@@ -271,7 +274,7 @@ const handleBlankPointerDown = (evt, x, y) => {
 };
 
 const handleCellRemovedEvent = (cell) => {
-  // saveGraph();
+  saveGraph();
   if (selectedCell.value === cell) {
     selectedCell.value = null;
     cellData.value = {};
@@ -353,6 +356,15 @@ const listenForMessages = () => {
 
 listenForMessages();
 
+const scrollToLastMessage = () => {
+  {
+    const lastMessage = messagesContainer.value.lastElementChild;
+    lastMessage?.scrollIntoView({
+      behavior: "smooth",
+    });
+  }
+};
+
 const sendMessage = () => {
   if (message.value === "") return;
   const newMessageRef = push(ref(db, "messages/" + projectKey));
@@ -383,6 +395,14 @@ const updateSelectedCell = () => {
     selectedCell.value.resize(cellData.value.width, cellData.value.height);
   }
 };
+
+watch(messagesContainer, () => {
+  if (messagesContainer.value) {
+    scrollToLastMessage();
+  } else {
+    // not mounted yet, or the element was unmounted (e.g. by v-if)
+  }
+});
 </script>
 
 <template>
@@ -475,12 +495,17 @@ const updateSelectedCell = () => {
             >
               There are no messages yet
             </div>
-            <div v-else class="flex flex-col gap-2 max-h-72 overflow-y-auto">
+            <div
+              v-else
+              ref="messagesContainer"
+              class="flex flex-col gap-2 max-h-72 overflow-y-auto"
+            >
               <div v-for="(message, key) in messages" :key="key">
                 <span class="font-semibold">
-                  {{ message.name || "Anonymous" }}:</span
-                >
+                  {{ message.name || "Anonymous" }}:
+                </span>
                 {{ message.message }}
+                <span class="text-slate-400 ml-2 text-[11px]">{{ (new Date(message.createdAt)).toLocaleString('es-ES') }}</span>
               </div>
             </div>
             <div>
@@ -535,5 +560,22 @@ const updateSelectedCell = () => {
 
 .joint-tool[data-tool-name="hover-connect"] circle {
   fill: #4666e5;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #555;
 }
 </style>

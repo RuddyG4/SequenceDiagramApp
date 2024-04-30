@@ -30,7 +30,7 @@ export function createNewShape(shapeToCreate, paper) {
   const graph = paper.options.model;
   if (shapeToCreate === "actor") {
     const lifeline = new sd.Lifeline();
-    lifeline.attachToActor(shape, shape.size().height * 5.2);
+    lifeline.attachToActor(shape, shape.size().height * 4.5);
     lifeline.addTo(graph);
   }
   shape.addTo(graph);

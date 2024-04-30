@@ -101,13 +101,13 @@ const generatePHPCode = () => {
                 (object) => object.id === targetLifeline.source.id
               );
               if (targetLifeline.target.x > objectLifeline.target.x) {
-                code += `  \$${camelize(objectTarget.attrs.label.text)} = new ${
+                code += `   \$${camelize(objectTarget.attrs.label.text)} = new ${
                   objectTarget.attrs.label.text
                 }();\n\n`;
               }
             }
           });
-          code += `   }\n\n`;
+          code += `  }\n\n`;
         }
       }
     });
@@ -280,23 +280,29 @@ const generateCode = () => {
             <span class="relative ml-2">Compartir</span>
           </button>
         </li>
-        <li
-          v-for="(user, key) in activeUsers"
-          :key="key"
-          class="flex items-center -space-x-4"
-        >
-          <FwbTooltip>
-            <template #trigger>
-              <img
-                :alt="user.name"
-                :src="user.photoUrl"
-                class="relative inline-block h-8 w-8 rounded-full border-2 border-white object-cover object-center hover:z-10 focus:z-10 cursor-pointer"
-              />
-            </template>
-            <template #content>
-              <div class="bg-slate-200 py-1 px-2 rounded">{{ user.name }}</div>
-            </template>
-          </FwbTooltip>
+        <li>
+          <ul class="flex items-center -space-x-4">
+            <li
+              v-for="(user, key) in activeUsers"
+              :key="key"
+              class="flex items-center -space-x-4"
+            >
+              <FwbTooltip>
+                <template #trigger>
+                  <img
+                    :alt="user.name"
+                    :src="user.photoUrl"
+                    class="relative inline-block h-8 w-8 rounded-full border-2 border-white object-cover object-center hover:z-10 focus:z-10 cursor-pointer"
+                  />
+                </template>
+                <template #content>
+                  <div class="bg-slate-200 py-1 px-2 rounded">
+                    {{ user.name }}
+                  </div>
+                </template>
+              </FwbTooltip>
+            </li>
+          </ul>
         </li>
         <li>
           <FwbDropdown placement="left" close-inside>

@@ -4,18 +4,18 @@
   <div class="mt-8">
     <div class="flex-1 flex flex-col gap-6">
       <div>
-        <FwbInput placeholder="Email" label="Email" v-model="email" disabled />
+        <FwbInput placeholder="Email" label="Email" v-model="userData.email" disabled />
       </div>
 
       <div>
-        <FwbInput placeholder="Username" label="Username" v-model="username" />
+        <FwbInput placeholder="Username" label="Username" v-model="userData.displayName" />
       </div>
 
       <div>
         <FwbInput
           placeholder="Photo url"
           label="Photo url"
-          v-model="photoUrl"
+          v-model="userData.photoURL"
         />
       </div>
 
@@ -24,13 +24,13 @@
           placeholder="0000000000"
           type="number"
           label="Phone number"
-          v-model="phoneNumber"
+          v-model="userData.phoneNumber"
         />
       </div>
 
       <div>
         <h3 class="font-semibold text-sm mb-2">Profile picture</h3>
-        <FwbFileInput v-model="username" label="Profile picture" dropzone />
+        <FwbFileInput v-model="file" label="Profile picture" dropzone />
       </div>
     </div>
 
@@ -38,14 +38,22 @@
       <RouterLink :to="{ name: 'home' }">
         <FwbButton color="light">Cancel</FwbButton>
       </RouterLink>
-      <FwbButton @click="updateUserProfile">Update profile</FwbButton>
+      <FwbButton @click="updateUserProfile" :loading="isUpdatingProfile" :disabled="isUpdatingProfile">Update profile</FwbButton>
     </div>
   </div>
+
+  <FwbToast
+    v-if="showSuccessToast"
+    class="fixed top-5 right-5"
+    type="success"
+    closable
+    >Profile updated successfully</FwbToast
+  >
 </template>
 
 <script setup>
-import { FwbInput, FwbFileInput, FwbButton } from "flowbite-vue";
-import { getAuth, updateProfile, onAuthStateChanged } from "firebase/auth";
+import { FwbInput, FwbFileInput, FwbButton, FwbToast } from "flowbite-vue";
+import { getAuth, updateProfile } from "firebase/auth";
 import { ref } from "vue";
 
 const props = defineProps({
@@ -56,24 +64,27 @@ const props = defineProps({
 });
 
 const auth = getAuth();
-const user = ref(null);
-const username = ref(props.user.displayName);
-const phoneNumber = ref(props.user.phoneNumber);
-const email = ref(props.user.email);
-const photoUrl = ref(props.user.photoURL);
+const userData = ref({
+  displayName: props.user.displayName,
+  phoneNumber: props.user.phoneNumber,
+  photoURL: props.user.photoURL,
+  email: props.user.email,
+  uid: props.user.uid,
+});
 const file = ref(null);
 const isUpdatingProfile = ref(false);
+const showSuccessToast = ref(false);
 
 const updateUserProfile = () => {
   isUpdatingProfile.value = true;
   updateProfile(auth.currentUser, {
-    displayName: username.value,
-    phoneNumber: phoneNumber.value,
-    photoURL: photoUrl.value,
+    ...userData.value,
   })
     .then(() => {
-      console.log("Profile updated successfully");
-      // TODO: show success message with toast
+      showSuccessToast.value = true;
+      setTimeout(() => {
+        showSuccessToast.value = false;
+      }, 5000);
     })
     .catch((error) => {
       console.error("Error updating profile: ", error);

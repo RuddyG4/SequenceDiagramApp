@@ -3,6 +3,7 @@
   <div class="bg-gray-100 flex justify-center items-center h-screen">
     <!-- Left: Image -->
     <div class="w-1/2 h-screen hidden lg:block">
+      <!-- https://img.freepik.com/premium-psd/graph-diagram-mathematical-profit-business-blue-squared-button-3d-realistic-speech-bubble-icon_92753-11227.jpg?w=740 -->
       <img
         src="https://placehold.co/800x/667fff/ffffff.png?text=Your+Image&font=Montserrat"
         alt="Placeholder Image"
@@ -46,6 +47,11 @@
           </button>
         </div>
       </div>
+
+      <FwbAlert v-if="alertMessage" class="my-4" icon type="danger">
+        {{ alertMessage }}
+      </FwbAlert>
+
       <form @submit.prevent="login" method="POST">
         <!-- Username Input -->
         <div class="mb-4">
@@ -109,23 +115,28 @@ import {
 } from "firebase/auth";
 import { ref } from "vue";
 import { useRouter } from "vue-router";
+import { FwbAlert } from "flowbite-vue";
 
 const router = useRouter();
 
 const email = ref("");
 const password = ref("");
+const alertMessage = ref("");
 
-const auth = getAuth();
+const errorMap = {
+  "auth/invalid-email": "Invalid email",
+  "auth/wrong-password": "Wrong password",
+  "auth/user-not-found": "User not found",
+  "auth/missing-password": "Missing password",
+  "auth/invalid-credential": "Invalid credentials",
+};
 const login = () => {
   signInWithEmailAndPassword(getAuth(), email.value, password.value)
     .then((userCredential) => {
-      // Signed in
-      const user = userCredential.user;
       router.push({ name: "home" });
     })
     .catch((error) => {
-      const errorCode = error.code;
-      const errorMessage = error.message;
+      alertMessage.value = errorMap[error.code] || "Unknown error";
     });
 };
 
@@ -133,7 +144,7 @@ const signInWithGoogle = () => {
   const provider = new GoogleAuthProvider();
   signInWithPopup(getAuth(), provider)
     .then((result) => {
-      console.log(result.user);
+      // console.log(result.user);
       router.push({ name: "home" });
     })
     .catch((error) => {
